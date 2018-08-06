@@ -1,0 +1,42 @@
+name:                hrf
+version:             0.1.0.0
+#synopsis:
+#description:
+homepage:            https://github.com/githubuser/hrf#readme
+license:             BSD3
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2018 Author name here
+category:            Web
+extra-source-files:
+  - README.md
+
+default-extensions:
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - TemplateHaskell
+  - TypeFamilies
+  - FlexibleContexts
+  - MultiParamTypeClasses
+  - GeneralizedNewtypeDeriving
+  - GADTs
+  - EmptyDataDecls
+  - QuasiQuotes
+
+dependencies:
+  - base >= 4.7 && < 5
+  - protolude
+  - persistent
+  - persistent-template
+  - persistent-sqlite
+  - persistent-postgresql
+  - containers
+  - resource-pool
+  - servant
+  - esqueleto
+  - servant-server
+
+executables:
+  hrf:
+    source-dirs:      src
+    main:             Main.hs
