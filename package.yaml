@@ -26,6 +26,8 @@ default-extensions:
 dependencies:
   - base >= 4.7 && < 5
   - protolude
+  - monad-logger
+  - warp
   - persistent
   - persistent-template
   - persistent-sqlite

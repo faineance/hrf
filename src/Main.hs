@@ -10,12 +10,18 @@
 
 {-# LANGUAGE FlexibleInstances          #-}
 module Main where
+
+import Network.Wai.Handler.Warp
 import Protolude hiding (get)
 import Database.Persist
 import Database.Persist.TH
 import Database.Persist.Sqlite
+
+import Control.Monad.Logger                 (runNoLoggingT, runStdoutLoggingT)
 import Servant.Server
 import App
+
+import Database.Persist.Postgresql (ConnectionPool,ConnectionString,createPostgresqlPool)
 
 share [mkPersist sqlSettings, mkSave "authDefs"] [persistLowerCase|
 User json
@@ -38,9 +44,9 @@ doMigrations :: ReaderT SqlBackend IO ()
 doMigrations = runMigration $ migrate  authDefs $ entityDef (Nothing :: Maybe User)
 
 main :: IO ()
-main = runSqlite "db.sqlite3" $ do
-    -- this line added: that's it!
-    runMigration $ migrate  authDefs $ entityDef (Nothing :: Maybe User)
-    michaelId <- insert $ User "Michael" "a"
-    michael <- get michaelId
-    liftIO $ print michael
+main = do
+  pool <-runStdoutLoggingT$  createPostgresqlPool "postgresql://localhost" 1
+  run 8080 . serve userAPI $  (appToServer (Config pool) )
+  {-where-}
+    {-app = serve userAPI (appToServer (Config pool) )-}
+
