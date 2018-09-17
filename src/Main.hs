@@ -34,17 +34,19 @@ userAPI :: Proxy UserAPI
 userAPI = Proxy
 
 userServer :: ServerT UserAPI App
-userServer = crudAPI (runDb listModel) (runDb . retrieveModel ) (runDb . createModel)
+userServer =
+  crudAPI (listModel) (retrieveModel) (createModel)
 
 appToServer :: Config -> Server UserAPI
 appToServer cfg = hoistServer userAPI (runAppAsHandler cfg) userServer
 
 doMigrations :: ReaderT SqlBackend IO ()
-doMigrations = runMigration $ migrate  authDefs $ entityDef (Nothing :: Maybe User)
+doMigrations =
+  runMigration $ migrate authDefs $ entityDef (Nothing :: Maybe User)
 
 main :: IO ()
 main = do
-  pool <-runStdoutLoggingT $ createPostgresqlPool "postgresql://postgres@localhost" 1
+  pool <- runStdoutLoggingT
+    $ createPostgresqlPool "postgresql://postgres@localhost" 1
   runSqlPool doMigrations pool
-  run 8080 . serve userAPI $  (appToServer (Config pool) )
-
+  run 8080 . serve userAPI $ (appToServer (Config pool))
