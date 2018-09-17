@@ -19,7 +19,9 @@ data Config = Config {
 newtype AppT m a = AppT
   { runApp :: ReaderT Config (ExceptT ServantErr m) a
   } deriving ( Functor, Applicative, Monad, MonadReader Config, MonadError ServantErr, MonadIO)
+
 type App = AppT IO
+
 runDb :: (MonadReader Config m, MonadIO m) => SqlPersistT IO b -> m b
 runDb query = do
   pool <- asks dbPool
@@ -60,7 +62,10 @@ retrieveModel id = do
     (Just v) -> return v
     Nothing  -> throwError err404
 
-
 createModel
   :: (MonadIO m, PersistRecordBackend a SqlBackend) => a -> AppT m (Entity a)
-createModel a = runDb $ insertEntity a
+createModel a = do
+  maybeUser <- runDb $ insertUniqueEntity a
+  case maybeUser of
+    (Just v) -> return v
+    Nothing  -> throwError err400
