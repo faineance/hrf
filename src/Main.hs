@@ -1,6 +1,4 @@
 
-
-
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
@@ -20,22 +18,23 @@ import Database.Persist.Sqlite
 import Control.Monad.Logger                 (runNoLoggingT, runStdoutLoggingT)
 import Servant.Server
 import App
-
-import Database.Persist.Postgresql (ConnectionPool,ConnectionString,createPostgresqlPool)
+import Database.Persist.Postgresql (ConnectionPool,ConnectionString,createPostgresqlPool, runSqlPool)
 
 share [mkPersist sqlSettings, mkSave "authDefs"] [persistLowerCase|
 User json
     username Text
     password Text
+    UniqueUser username
     deriving Show Eq Generic
 |]
 
 type UserAPI = (CRUDAPI "users" User UserId)
+
 userAPI :: Proxy UserAPI
 userAPI = Proxy
 
 userServer :: ServerT UserAPI App
-userServer = crudAPI (runDb listModel) undefined undefined
+userServer = crudAPI (runDb listModel) (runDb . retrieveModel ) (runDb . createModel)
 
 appToServer :: Config -> Server UserAPI
 appToServer cfg = hoistServer userAPI (runAppAsHandler cfg) userServer
@@ -45,8 +44,7 @@ doMigrations = runMigration $ migrate  authDefs $ entityDef (Nothing :: Maybe Us
 
 main :: IO ()
 main = do
-  pool <-runStdoutLoggingT$  createPostgresqlPool "postgresql://localhost" 1
+  pool <-runStdoutLoggingT $ createPostgresqlPool "postgresql://postgres@localhost" 1
+  runSqlPool doMigrations pool
   run 8080 . serve userAPI $  (appToServer (Config pool) )
-  {-where-}
-    {-app = serve userAPI (appToServer (Config pool) )-}
 

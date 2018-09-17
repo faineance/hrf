@@ -28,11 +28,9 @@ runDb query = do
 runAppAsHandler :: Config -> App a -> Handler a
 runAppAsHandler cfg app = Handler $ runReaderT (runApp app) cfg
 
-{-runAppAsHandler :: AppEnv -> App a -> Handler a-}
-{-runAppAsHandler env action = do-}
 
 type ListAPI a = Get '[JSON] [Entity a]
-type RetrieveAPI a i = Capture "id" i :> Get '[JSON] (Entity a)
+type RetrieveAPI a i = Capture "id" i :> Get '[JSON] (Maybe (Entity a))
 type CreateAPI a = ReqBody '[JSON] a :> Post '[JSON] (Entity a)
 
 
@@ -44,7 +42,7 @@ type CRUDAPI (name :: Symbol) a i = name :>
 
 crudAPI
   :: App [Entity a]
-  -> (i -> App (Entity a))
+  -> (i -> App (Maybe (Entity a)))
   -> (a -> App (Entity a))
   -> ServerT (CRUDAPI name a i) App
 crudAPI listAs getA postA = listAs :<|> getA :<|> postA
@@ -53,14 +51,19 @@ listModel
   :: (MonadIO m, PersistRecordBackend a SqlBackend) => SqlReadT m [Entity a]
 listModel = select $ from $ \p -> return p
 
-retrieveModel
-  :: (MonadIO m, PersistRecordBackend a SqlBackend)
-  => Key a
-  -> SqlReadT m [Entity a]
-retrieveModel id = select $ from $ \p -> do
-  where_ (p ^. persistIdField ==. val id)
-  return p
+{-retrieveModel-}
+  {-:: (MonadIO m, PersistRecordBackend a SqlBackend)-}
+  {-=> Key a-}
+  {--> SqlReadT m (Maybe (Entity a))-}
+retrieveModel id = P.getEntity id
+{-retrieveModel-}
+  {-:: (MonadIO m, PersistRecordBackend a SqlBackend)-}
+  {-=> Key a-}
+  {--> SqlReadT m (Entity a)-}
+{-retrieveModel id = select $ from $ \p -> do-}
+  {-where_ (p ^. persistIdField ==. val id)-}
+  {-return p-}
 
 {-createModel-}
   {-:: (MonadIO m, PersistRecordBackend a SqlBackend) => a -> SqlWriteT m (Key a)-}
-{-createModel a = insert a-}
+createModel a = insertEntity a

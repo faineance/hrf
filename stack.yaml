@@ -18,7 +18,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-12.2
+resolver: lts-12.10
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -38,12 +38,13 @@ packages:
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 extra-deps:
-- persistent-postgresql-2.8.2.0
-- postgresql-simple-0.5.3.0
+#- esqueleto-2.5.3
+#- persistent-postgresql-2.8.2.0
+#- postgresql-simple-0.5.3.0
 - git: git@github.com:bitemyapp/esqueleto.git
   commit: 434f81ed41795e3dd0754dbc5c75c4ed098631b3
 
-allow-newer: true
+#allow-newer: true
 #- persistent-2.7.3.1
 # Override default flag values for local packages and extra-deps
 # flags: {}
