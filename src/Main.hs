@@ -6,6 +6,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances          #-}
 module Main where
 
@@ -20,33 +21,41 @@ import Servant.Server
 import App
 import Database.Persist.Postgresql (ConnectionPool,ConnectionString,createPostgresqlPool, runSqlPool)
 
-share [mkPersist sqlSettings, mkSave "authDefs"] [persistLowerCase|
+import           Servant
+share [mkPersist sqlSettings, mkMigrate "authDefs"] [persistLowerCase|
 User json
     username Text
     password Text
     UniqueUser username
     deriving Show Eq Generic
+
+Todo json
+    name Text
+    completed Bool
+    user UserId
+    deriving Show Eq Generic
 |]
 
-type UserAPI = (CRUDAPI "users" User UserId)
+type API = (CRUDAPI "users" User UserId) :<|> (CRUDAPI "todos" Todo TodoId)
 
-userAPI :: Proxy UserAPI
-userAPI = Proxy
+api :: Proxy API
+api= Proxy
 
-userServer :: ServerT UserAPI App
+userServer :: ServerT API App
 userServer =
   crudAPI (listModel) (retrieveModel) (createModel)
+  :<|> crudAPI (listModel) (retrieveModel) (createModel)
 
-appToServer :: Config -> Server UserAPI
-appToServer cfg = hoistServer userAPI (runAppAsHandler cfg) userServer
+appToServer :: Config -> Server API
+appToServer cfg = hoistServer api (runAppAsHandler cfg) userServer
 
 doMigrations :: ReaderT SqlBackend IO ()
 doMigrations =
-  runMigration $ migrate authDefs $ entityDef (Nothing :: Maybe User)
+  runMigration authDefs
 
 main :: IO ()
 main = do
   pool <- runStdoutLoggingT
     $ createPostgresqlPool "postgresql://postgres@localhost" 1
   runSqlPool doMigrations pool
-  run 8080 . serve userAPI $ (appToServer (Config pool))
+  run 8080 . serve api $ (appToServer (Config pool))
