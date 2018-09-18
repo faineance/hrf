@@ -42,15 +42,21 @@ type CRUDAPI (name :: Symbol) a i = name :>
   :<|> CreateAPI a
   )
 
-crudAPI
-  :: App [Entity a]
-  -> (i -> App ((Entity a)))
-  -> (a -> App (Entity a))
-  -> ServerT (CRUDAPI name a i) App
-crudAPI listAs getA postA = listAs :<|> getA :<|> postA
+{-crudAPI-}
+  {-:: App [Entity a]-}
+  {--> (i -> App ((Entity a)))-}
+  {--> (a -> App (Entity a))-}
+  {--> ServerT (CRUDAPI name a i) App-}
+{-crudAPI listAs getA postA = listAs :<|> getA :<|> postA-}
+listModel
+  :: ( MonadIO m
+     , PersistRecordBackend a SqlBackend
+     , (From SqlQuery SqlExpr SqlBackend a1)
+     )
+  => (a1 -> SqlQuery (SqlExpr (Entity a)))
+  -> AppT m [Entity a]
+listModel initial = runDb $ select (from initial)
 
-listModel :: (MonadIO m, PersistRecordBackend a SqlBackend) => AppT m [Entity a]
-listModel = runDb $ select $ from $ \p -> return p
 
 retrieveModel
   :: (MonadIO m, PersistRecordBackend a SqlBackend)

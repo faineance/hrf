@@ -11,11 +11,10 @@
 module Main where
 
 import Network.Wai.Handler.Warp
-import Protolude hiding (get)
-import Database.Persist
+import Protolude hiding (get, from)
 import Database.Persist.TH
-import Database.Persist.Sqlite
 
+import Database.Esqueleto
 import Control.Monad.Logger                 (runNoLoggingT, runStdoutLoggingT)
 import Servant.Server
 import App
@@ -37,15 +36,37 @@ Todo json
 |]
 
 type API = (CRUDAPI "users" User UserId) :<|> (CRUDAPI "todos" Todo TodoId)
+{-xad-}
+  {-:: ( Esqueleto query expr backend-}
+     {-, PersistEntity Todo-}
+     {-, PersistEntityBackend Todo ~ backend-}
+     {-)-}
+  {-=>-}
+  {-{-=> Key User-}-}
+   {-(expr (Entity Todo))-}
+{-xad = \p -> do-}
+  {-{-where_ (p ^. TodoUser ==. val id)-}-}
+  {-return p-}
+
+asd :: Key User -> a -> SqlQuery a
+asd id = \p -> do
+  where_ (p ^. TodoUser ==. val id)
+  return p
+
+all_ ::  a -> SqlQuery a
+all_= \p -> do
+  return p
 
 api :: Proxy API
 api= Proxy
 
 userServer :: ServerT API App
 userServer =
-  crudAPI (listModel) (retrieveModel) (createModel)
-  :<|> crudAPI (listModel) (retrieveModel) (createModel)
-
+  ((listModel (all_) ) :<|> (retrieveModel) :<|> (createModel))
+    :<|> (    (listModel (asd (toSqlKey 3) ))
+         :<|> (retrieveModel)
+         :<|> (createModel)
+         )
 appToServer :: Config -> Server API
 appToServer cfg = hoistServer api (runAppAsHandler cfg) userServer
 
