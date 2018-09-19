@@ -58,16 +58,24 @@ listModel
   -> AppT m [Entity a]
 listModel initial = runDb $ select (from initial)
 
+{-retrieveModel-}
+  {-:: (MonadIO m, PersistRecordBackend a SqlBackend)-}
+  {-=> Key a-}
+  {--> AppT m (Entity a)-}
 
-retrieveModel
-  :: (MonadIO m, PersistRecordBackend a SqlBackend)
-  => Key a
-  -> AppT m (Entity a)
-retrieveModel id = do
-  maybeUser <- runDb $ P.getEntity id
-  case maybeUser of
-    (Just v) -> return v
-    Nothing  -> throwError err404
+retrieveModel initial id = do
+  res <- select $ from $ \p -> do
+    initial
+    where_ (p ^. persistIdField ==. val id)
+    limit 1
+    return p
+  case res of
+    [v] -> return v
+    _ -> throwError err404
+  {-maybeUser <- runDb $ P.getEntity id-}
+  {-case maybeUser of-}
+    {-(Just v) -> return v-}
+    {-Nothing  -> throwError err404-}
 
 createModel
   :: (MonadIO m, PersistRecordBackend a SqlBackend) => a -> AppT m (Entity a)
