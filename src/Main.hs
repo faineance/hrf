@@ -48,10 +48,17 @@ type API = (CRUDAPI "users" User UserId) :<|> (CRUDAPI "todos" Todo TodoId)
   {-{-where_ (p ^. TodoUser ==. val id)-}-}
   {-return p-}
 
-asd :: Key User -> a -> SqlQuery a
+{-asd :: Key User -> a -> SqlQuery a-}
+
+asd
+  :: Esqueleto query expr backend
+  => Key User
+  -> expr (Entity Todo)
+  -> query (expr (Entity Todo))
 asd id = \p -> do
   where_ (p ^. TodoUser ==. val id)
   return p
+
 
 all_ ::  a -> SqlQuery a
 all_= \p -> do
@@ -63,7 +70,7 @@ api= Proxy
 userServer :: ServerT API App
 userServer =
   ((listModel (all_) ) :<|> (retrieveModel) :<|> (createModel))
-    :<|> (    (listModel (asd (toSqlKey 3) ))
+    :<|> (    (listModel (asd (toSqlKey 1) ))
          :<|> (retrieveModel)
          :<|> (createModel)
          )

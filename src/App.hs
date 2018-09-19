@@ -48,6 +48,7 @@ type CRUDAPI (name :: Symbol) a i = name :>
   {--> (a -> App (Entity a))-}
   {--> ServerT (CRUDAPI name a i) App-}
 {-crudAPI listAs getA postA = listAs :<|> getA :<|> postA-}
+
 listModel
   :: ( MonadIO m
      , PersistRecordBackend a SqlBackend
