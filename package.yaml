@@ -28,17 +28,42 @@ dependencies:
   - protolude
   - monad-logger
   - warp
+  - wai
   - persistent
   - persistent-template
   - persistent-sqlite
   - persistent-postgresql
   - containers
   - resource-pool
-  - servant
   - esqueleto
+  - swagger2
+  - servant
+  - servant-swagger
+  - servant-swagger-ui
   - servant-server
+
+library:
+  source-dirs:
+    - src
+
 
 executables:
   hrf:
-    source-dirs:      src
+    source-dirs:      exe
     main:             Main.hs
+    dependencies:
+      - hrf
+
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - tests
+    dependencies:
+      - hspec
+      - hrf
+      - servant-client
+      - warp >= 3.2.4
+      - http-client
+      - http-types
