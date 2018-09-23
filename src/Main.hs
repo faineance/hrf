@@ -36,6 +36,7 @@ Todo json
 |]
 
 type API = (CRUDAPI "users" User UserId) :<|> (CRUDAPI "todos" Todo TodoId)
+
 {-xad-}
   {-:: ( Esqueleto query expr backend-}
      {-, PersistEntity Todo-}
@@ -50,32 +51,32 @@ type API = (CRUDAPI "users" User UserId) :<|> (CRUDAPI "todos" Todo TodoId)
 
 {-asd :: Key User -> a -> SqlQuery a-}
 
-asd
-  :: Esqueleto query expr backend
-  => Key User
-  -> expr (Entity Todo)
-  -> query (expr (Entity Todo))
-asd id = \p -> do
+{-byUser-}
+  {-:: Esqueleto query expr backend-}
+  {-=> Key User-}
+  {--> expr (Entity Todo)-}
+  {--> query (expr (Entity Todo))-}
+byUser id = \p -> do
   where_ (p ^. TodoUser ==. val id)
   return p
 
-
-all_ ::  a -> SqlQuery a
+all_ :: a -> SqlQuery a
 all_= \p -> do
   return p
 
 api :: Proxy API
 api= Proxy
+server :: ServerT API App
+server = users :<|> todos
+ where
+  users = ((listModel (all_)) :<|> (retrieveModel all_) :<|> (createModel))
+  todos =
+    (listModel defaultInitial) :<|> (retrieveModel defaultInitial) :<|> (createModel)
+  defaultInitial = byUser (toSqlKey 1)
 
-userServer :: ServerT API App
-userServer =
-  ((listModel (all_) ) :<|> (retrieveModel) :<|> (createModel))
-    :<|> (    (listModel (asd (toSqlKey 1) ))
-         :<|> (retrieveModel)
-         :<|> (createModel)
-         )
+
 appToServer :: Config -> Server API
-appToServer cfg = hoistServer api (runAppAsHandler cfg) userServer
+appToServer cfg = hoistServer api (runAppAsHandler cfg) server
 
 doMigrations :: ReaderT SqlBackend IO ()
 doMigrations =
