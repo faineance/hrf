@@ -63,6 +63,8 @@ tests:
     dependencies:
       - hspec
       - hrf
+      - QuickCheck
+      - quickcheck-instances
       - servant-client
       - warp >= 3.2.4
       - http-client
